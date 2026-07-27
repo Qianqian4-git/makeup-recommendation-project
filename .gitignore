@@ -16,6 +16,8 @@ data/
 *.npy
 *.pth
 *.h5
+*.npz
+*.csv
 
 # IDE 配置
 .vscode/
