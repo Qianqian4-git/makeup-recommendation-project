@@ -27,25 +27,64 @@ BLUR_THRESHOLD = 50
 os.makedirs(os.path.dirname(FEATURES_SAVE_PATH), exist_ok=True)
 
 
-# 
-# ==================== 加载关键点（如果存在） ====================
+# ==================== 加载关键点（真正的万能读取法） ====================
 print("📂 加载人脸关键点数据...")
-landmark_file = os.path.join(os.path.dirname(IMG_DIR), "list_landmarks_align_celeba.txt")
+
+# 1. 读取文件路径
+landmark_file = os.getenv("LANDMARK_FILE")
+if not landmark_file:
+    landmark_file = os.path.join(os.path.dirname(IMG_DIR), "list_landmarks_align_celeba.txt")
+
 landmarks_dict = {}
 
 if os.path.exists(landmark_file):
     try:
-        lm_df = pd.read_csv(landmark_file, sep=r'\s+', skiprows=1, header=None)
-        for _, row in lm_df.iterrows():
-            landmarks_dict[row[0]] = {
-                'le_x': float(row[1]), 'le_y': float(row[2]),
-                're_x': float(row[3]), 're_y': float(row[4])
+        with open(landmark_file, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        # ---------- 核心：自动寻找“第一行真正的数据” ----------
+        def is_data_line(parts):
+            """判断这一行是不是真实数据行"""
+            # 1. 至少要有 文件名 + 2个坐标（最少3个元素）
+            if len(parts) < 3:
+                return False
+            # 2. 检查后面的元素（从第2个开始）是不是纯数字（浮点数）
+            #    用 try/except 看能不能转成 float
+            try:
+                for i in range(1, min(len(parts), 5)):  # 检查前几个坐标
+                    float(parts[i])
+                return True
+            except ValueError:
+                return False
+        
+        # 遍历所有行，找到第一个“数据行”的索引
+        start_idx = 0
+        for i, line in enumerate(lines):
+            parts = line.strip().split()
+            if is_data_line(parts):
+                start_idx = i
+                break
+        
+        # ---------- 从数据行开始解析 ----------
+        for line in lines[start_idx:]:
+            parts = line.strip().split()
+            # 如果是空行或长度不够，跳过
+            if len(parts) < 5:
+                continue
+            
+            filename = parts[0]
+            # 取前 4 个坐标（左眼x,y 右眼x,y）
+            landmarks_dict[filename] = {
+                'le_x': float(parts[1]), 'le_y': float(parts[2]),
+                're_x': float(parts[3]), 're_y': float(parts[4])
             }
-        print(f"✅ 加载了 {len(landmarks_dict)} 个关键点")
+        
+        print(f"✅ 成功加载了 {len(landmarks_dict)} 个关键点")
+    
     except Exception as e:
-        print(f"⚠️ 读取关键点文件失败：{e}，将跳过人脸对齐")
+        print(f"⚠️ 读取关键点文件失败: {e}, 将跳过人脸对齐（直接缩放）")
 else:
-    print("⚠️ 关键点文件不存在，将跳过人脸对齐（直接缩放）")
+    print("⚠️ 关键点文件不存在, 将跳过人脸对齐（直接缩放）")
 
 # 自定义数据集类的头部
 class CelebAEnterpriseDataset(Dataset):
