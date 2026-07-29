@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from dotenv import load_dotenv
 from models import FaceAttributeModel
-
+from config import TARGET_ATTRS, NUM_ATTRS
 load_dotenv()
 
 # ==================== 1. 配置 ====================
@@ -27,24 +27,8 @@ print("="*60)
 print("💄 训练面部属性分析模型（14个核心属性）")
 print("="*60)
 
-# ==================== 2. 定义核心属性（14个） ====================
-TARGET_ATTRS = [
-    'Male',              # 性别（-1男，1女）
-    'Oval_Face',         # 椭圆脸/鹅蛋脸
-    'Chubby',            # 圆胖脸
-    'High_Cheekbones',   # 高颧骨
-    'Double_Chin',       # 双下巴
-    'Narrow_Eyes',       # 细长眼/丹凤眼
-    'Arched_Eyebrows',   # 弯眉
-    'Bushy_Eyebrows',    # 浓眉
-    'Big_Nose',          # 大鼻子
-    'Pointy_Nose',       # 尖鼻子
-    'Big_Lips',          # 厚嘴唇
-    'Mouth_Slightly_Open', # 微张嘴（影响唇妆推荐）
-    'Pale_Skin',         # 苍白皮肤/冷白皮
-    'Young'              # 年轻态
-]
-NUM_ATTRS = len(TARGET_ATTRS)
+# ==================== 2. 核心属性（14个） ====================
+
 print(f" 目标属性: {TARGET_ATTRS}")
 
 # ==================== 3. 加载数据 ====================
@@ -118,12 +102,7 @@ print(f"训练集样本数: {len(x_train)}, 验证集样本数: {len(x_val)}")
 
 # ==================== 6. 定义模型 ====================
 
-model = FaceAttributeModel(
-    input_dim = 513,
-    # hidden_dims = [512,256,128],
-    hidden_dims=[256, 128],   # 只留两层隐藏层，参数减少一半以上
-    output_dim = NUM_ATTRS
-).to(DEVICE)
+model = FaceAttributeModel().to(DEVICE)
 print(f"\n模型结构:\n{model}")
 
 # ==================== 7. 定义训练函数 ====================
