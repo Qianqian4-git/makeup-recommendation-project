@@ -18,6 +18,7 @@ torch_home = os.getenv("TORCH_HOME")
 IMG_DIR = os.getenv("RAW_DATA_DIR")
 PROCESSED_DIR = os.getenv("PROCESSED_DATA_DIR")
 FEATURES_SAVE_PATH = os.getenv("FEATURES_SAVE_PATH")
+TEST_FEATURES_SAVE_PATH = os.getenv("TEST_FEATURES_SAVE_PATH")#测试集
 DEVICE = os.getenv("DEVICE","cpu")
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", 64))
 
@@ -25,7 +26,7 @@ BATCH_SIZE = int(os.getenv("BATCH_SIZE", 64))
 BLUR_THRESHOLD = 50
 
 os.makedirs(os.path.dirname(FEATURES_SAVE_PATH), exist_ok=True)
-
+os.makedirs(os.path.dirname(TEST_FEATURES_SAVE_PATH), exist_ok=True)
 
 # ==================== 加载关键点（真正的万能读取法） ====================
 print("📂 加载人脸关键点数据...")
@@ -147,7 +148,8 @@ def extract_features():
     print("开始特征提取...")
     print("=" *50)
 
-    split_csv = os.path.join(PROCESSED_DIR, "train_images.csv")
+     #split_csv = os.path.join(PROCESSED_DIR, "train_images.csv")
+    split_csv = os.path.join(PROCESSED_DIR, "test_images.csv")
     if not os.path.exists(split_csv):
         raise FileNotFoundError(f"训练集 CSV 文件 {split_csv} 不存在，请检查路径。")
     
@@ -157,7 +159,7 @@ def extract_features():
     ])
 
     dataset = CelebAEnterpriseDataset(IMG_DIR, split_csv, transform=transform)
-    dataset.df = dataset.df.head(10000)
+    #dataset.df = dataset.df.head(1000)
     print(f"🧪 本次处理前 {len(dataset.df)} 张图片")
     
     dataloader = DataLoader(
@@ -188,7 +190,7 @@ def extract_features():
 
     all_features = np.vstack(features_list)
     all_genders = np.hstack(gender_list)
-    np.savez(FEATURES_SAVE_PATH, features=all_features, gender=all_genders)
+    np.savez(TEST_FEATURES_SAVE_PATH, features=all_features, gender=all_genders)
 
     print("✅ 特征提取完成！")
     print(f"📊 有效图片数：{len(all_features)}")
