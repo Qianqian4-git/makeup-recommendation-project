@@ -52,11 +52,10 @@ def recommend_makeup(attributes):
             return "韩系水光妆", "冷白皮搭配鹅蛋脸/弯眉，最适合清透水光肌和咬唇妆"
         
         # B2: 日系元气妆（圆脸/高颧骨 + 年轻）
-        # chubby == 1 or (high_cheekbones == 1 and young == 1)
-        # B2: 日系元气妆（圆脸 或 高颧骨）
-        elif chubby == 1 or high_cheekbones == 1 :
-            #return "日系元气妆", "圆脸或高颧骨年轻脸型，大面积腮红可以提升面部折叠度"
-            return "日系元气妆", "圆脸或高颧骨脸型，大面积腮红可以提升面部折叠度"
+    
+        elif chubby == 1 or (high_cheekbones == 1 and young == 1) :
+            return "日系元气妆", "圆脸或高颧骨年轻脸型，大面积腮红可以提升面部折叠度"
+
         # B3: 亚裔混血妆（高颧骨 + 厚唇 / 尖鼻子）
         elif high_cheekbones == 1 and (big_lips == 1 or pointy_nose == 1):
             return "亚裔混血妆", "高颧骨配厚唇或尖鼻，适合用修容打造立体混血感"
