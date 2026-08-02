@@ -13,12 +13,12 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 # 现在可以导入 src 下的模块了
-from src.inference import predict
+from src.inference_end2end import predict_image
 
 app = FastAPI(
     title="💄 妆容推荐 API",
     description="上传自拍照，AI 分析面部特征并推荐最适合的妆容",
-    version="2.0.0"
+    version="3.0.0"
 )
 
 app.add_middleware(
@@ -29,7 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".gif"}
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "bmp", "gif"}
 
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -49,13 +49,14 @@ async def root():
 async def predict_api(file:UploadFile = File(...)):
      # 1. 校验文件格式
     if not allowed_file(file.filename):
+        print(f"❌ 文件格式被拒: {file.filename}, content_type: {file.content_type}")
         raise HTTPException(
             status_code = 400,
             detail = "❌ 不支持的文件类型,(jpg, jpeg, png, bmp, gif)"
         )
     # 2. 保存临时文件
     try:
-        with tempfile.NamedTemporaryFile(delete = false,suffix='.jpg') as tmp:
+        with tempfile.NamedTemporaryFile(delete = False,suffix='.jpg') as tmp:
             content = await file.read()
             tmp.write(content)
             tmp_path = tmp.name
@@ -66,7 +67,8 @@ async def predict_api(file:UploadFile = File(...)):
         )
     # 3. 调用推理函数（默认自动检测性别）
     try:
-        result = predict(tmp_path,gender = None)
+        makeup, reason = predict_image(tmp_path)
+        print(f"🔍 API 推理结果: makeup={makeup}, reason={reason[:50]}...")
     except Exception as e:
         raise HTTPException(
             status_code = 500,
@@ -78,12 +80,11 @@ async def predict_api(file:UploadFile = File(...)):
             os.remove(tmp_path)
     
     # 4. 返回结果
-    return JSONResponse(content = {
-        "makeup": result["makeup"],
-        "reason": result["reason"],
-        "attributes": result["attributes"],
-        "filename": file.filename
-    })
+    return JSONResponse(content={
+    "makeup": makeup,
+    "reason": reason,
+    "filename": file.filename
+})
 
 if __name__ == "__main__":
     uvicorn.run(

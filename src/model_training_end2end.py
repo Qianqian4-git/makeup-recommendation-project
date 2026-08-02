@@ -67,12 +67,12 @@ attr_df_train = attr_df[attr_df['filename'].isin(train_filenames)]
 
 # ==================== 3. 划分训练/验证 ====================
 # 快速测试：先用 5000 张，正式跑请注释掉下面这行
-train_df_sub = train_df.head(5000)
-attr_df_train_sub = attr_df_train[attr_df_train['filename'].isin(train_df_sub['filename'].tolist())]
+#train_df_sub = train_df.head(5000)
+#attr_df_train_sub = attr_df_train[attr_df_train['filename'].isin(train_df_sub['filename'].tolist())]
 
 # 正式跑全量，注释上面两行，取消注释下面两行
-# train_df_sub = train_df
-# attr_df_train_sub = attr_df_train
+train_df_sub = train_df
+attr_df_train_sub = attr_df_train
 
 train_ids, val_ids = train_test_split(train_df_sub['filename'].tolist(), test_size=0.2, random_state=42)
 train_df_final = train_df_sub[train_df_sub['filename'].isin(train_ids)]

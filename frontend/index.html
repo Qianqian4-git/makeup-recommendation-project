@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>💄 AI 智能妆容推荐</title>
+    <style>
+        /* ===== 全局重置 & 字体 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Helvetica Neue', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #faf0ff 0%, #ffe6f0 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        /* ===== 卡片容器 ===== */
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 42px;
+            padding: 40px 35px;
+            box-shadow: 0 30px 80px rgba(109, 40, 217, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: all 0.2s ease;
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d1b3d;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        h1 small {
+            font-size: 0.9rem;
+            font-weight: 400;
+            color: #7a5a8a;
+            margin-left: 8px;
+        }
+        .subtitle {
+            color: #6b4c7a;
+            font-size: 0.95rem;
+            margin: 6px 0 28px 0;
+            border-left: 4px solid #b28bcb;
+            padding-left: 14px;
+            background: rgba(178, 139, 203, 0.08);
+            border-radius: 0 8px 8px 0;
+            line-height: 1.5;
+        }
+        /* ===== 上传区域 ===== */
+        .upload-zone {
+            border: 2px dashed #c9b0d9;
+            border-radius: 28px;
+            padding: 48px 20px 40px;
+            text-align: center;
+            background: #faf5ff;
+            cursor: pointer;
+            transition: border 0.25s, background 0.25s, transform 0.1s;
+            position: relative;
+        }
+        .upload-zone:hover {
+            border-color: #9b6bb3;
+            background: #f3ebff;
+        }
+        .upload-zone.dragover {
+            border-color: #7b4a9a;
+            background: #ede3ff;
+            transform: scale(1.01);
+        }
+        .upload-zone .icon {
+            font-size: 3.6rem;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .upload-zone .main-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #3d2a4a;
+        }
+        .upload-zone .hint {
+            font-size: 0.85rem;
+            color: #8a7a99;
+            margin-top: 4px;
+        }
+        #fileInput {
+            display: none;
+        }
+        /* ===== 预览图 ===== */
+        .preview-wrap {
+            margin-top: 20px;
+            display: none;
+            justify-content: center;
+        }
+        .preview-wrap img {
+            max-width: 100%;
+            max-height: 260px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid #eee;
+            object-fit: cover;
+        }
+        .preview-wrap.show {
+            display: flex;
+        }
+        /* ===== 按钮 ===== */
+        .btn-primary {
+            width: 100%;
+            margin-top: 24px;
+            padding: 16px 0;
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            border: none;
+            border-radius: 60px;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s;
+            box-shadow: 0 8px 24px rgba(109, 40, 217, 0.25);
+            letter-spacing: 0.3px;
+        }
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 36px rgba(109, 40, 217, 0.35);
+        }
+        .btn-primary:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        /* ===== 加载状态 ===== */
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 20px 0 8px;
+            color: #6b4c7a;
+            font-weight: 500;
+        }
+        .loading.show {
+            display: flex;
+        }
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e0d0ea;
+            border-top-color: #8b5cf6;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        /* ===== 结果卡片 ===== */
+        .result {
+            display: none;
+            margin-top: 28px;
+            padding: 24px 26px;
+            background: #f8f0ff;
+            border-radius: 28px;
+            border: 1px solid rgba(178, 139, 203, 0.25);
+            animation: fadeUp 0.4s ease;
+        }
+        .result.show {
+            display: block;
+        }
+        @keyframes fadeUp {
+            0% {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .result .makeup-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2d1b3d;
+            line-height: 1.2;
+        }
+        .result .makeup-name span {
+            background: linear-gradient(135deg, #8b5cf6, #d946ef);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .result .reason {
+            margin: 12px 0 14px 0;
+            font-size: 1rem;
+            color: #3d2a4a;
+            line-height: 1.7;
+            background: rgba(255, 255, 255, 0.55);
+            padding: 14px 18px;
+            border-radius: 16px;
+            border-left: 3px solid #b28bcb;
+        }
+        .result .attr-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .result .attr-tag {
+            background: #fff;
+            padding: 4px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #4a2d5a;
+            border: 1px solid #dccae8;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+        }
+        .result .attr-tag.high {
+            background: #8b5cf6;
+            color: #fff;
+            border-color: #8b5cf6;
+        }
+        /* ===== 错误提示 ===== */
+        .error-box {
+            display: none;
+            margin-top: 16px;
+            padding: 14px 18px;
+            background: #fde8e8;
+            border-radius: 18px;
+            color: #b91c1c;
+            border-left: 4px solid #b91c1c;
+            font-size: 0.95rem;
+        }
+        .error-box.show {
+            display: block;
+        }
+        /* ===== 响应式 ===== */
+        @media (max-width: 480px) {
+            .container {
+                padding: 28px 20px;
+            }
+            h1 {
+                font-size: 1.6rem;
+                flex-wrap: wrap;
+            }
+            .upload-zone {
+                padding: 32px 16px;
+            }
+            .result .makeup-name {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 标题 -->
+        <h1>
+            💄 妆容推荐
+            <small>AI 智能分析</small>
+        </h1>
+        <div class="subtitle">
+            📸 上传自拍照，AI 将分析你的面部特征并推荐最适合的妆容
+        </div>
+
+        <!-- 上传区 -->
+        <div class="upload-zone" id="uploadZone">
+            <div class="icon">📷</div>
+            <div class="main-text">点击选择 或 拖拽图片</div>
+            <div class="hint">支持 JPG / PNG / BMP / GIF</div>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" />
+
+        <!-- 预览 -->
+        <div class="preview-wrap" id="previewWrap">
+            <img id="previewImg" alt="预览" />
+        </div>
+
+        <!-- 按钮 -->
+        <button class="btn-primary" id="analyzeBtn" disabled>
+            ✨ 开始分析
+        </button>
+
+        <!-- 加载 -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <span>AI 正在分析你的面部特征…</span>
+        </div>
+
+        <!-- 错误 -->
+        <div class="error-box" id="errorBox"></div>
+
+        <!-- 结果 -->
+        <div class="result" id="result">
+            <div class="makeup-name">💄 <span id="makeupName">—</span></div>
+            <div class="reason" id="reasonText"></div>
+            <div class="attr-tags" id="attrTags"></div>
+        </div>
+
+        <!-- 页脚（可选） -->
+        <div style="margin-top:28px; font-size:0.75rem; color:#b8a8c4; text-align:center; border-top:1px solid rgba(178,139,203,0.15); padding-top:18px;">
+            API 服务运行在 <code style="background:#eee;padding:2px 10px;border-radius:12px;">http://127.0.0.1:8000</code>
+        </div>
+    </div>
+
+    <script>
+        // ==================== DOM 引用 ====================
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const previewWrap = document.getElementById('previewWrap');
+        const previewImg = document.getElementById('previewImg');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const loading = document.getElementById('loading');
+        const errorBox = document.getElementById('errorBox');
+        const result = document.getElementById('result');
+        const makeupName = document.getElementById('makeupName');
+        const reasonText = document.getElementById('reasonText');
+        const attrTags = document.getElementById('attrTags');
+
+        let selectedFile = null;
+
+        // ==================== 上传交互 ====================
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            // 简单类型检查
+            if (!file.type.startsWith('image/')) {
+                showError('请上传图片文件（jpg / png / bmp / gif）');
+                return;
+            }
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                previewWrap.classList.add('show');
+                analyzeBtn.disabled = false;
+                hideError();
+                result.classList.remove('show');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ==================== 错误 / 加载控制 ====================
+        function showError(msg) {
+            errorBox.textContent = '❌ ' + msg;
+            errorBox.classList.add('show');
+        }
+
+        function hideError() {
+            errorBox.classList.remove('show');
+        }
+
+        // ==================== 核心：调用 API ====================
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            // 禁用按钮，显示加载
+            analyzeBtn.disabled = true;
+            loading.classList.add('show');
+            hideError();
+            result.classList.remove('show');
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/predict', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || '服务器返回错误');
+                }
+
+                // 渲染结果
+                makeupName.textContent = data.makeup || '未识别';
+                reasonText.textContent = data.reason || '暂无推荐理由';
+
+                // 渲染属性标签（如果有）
+                attrTags.innerHTML = '';
+                if (data.attributes) {
+                    for (const [key, val] of Object.entries(data.attributes)) {
+                        const tag = document.createElement('span');
+                        tag.className = 'attr-tag';
+                        // 如果概率 > 0.4 则高亮（与你的阈值对应）
+                        if (val > 0.4) {
+                            tag.classList.add('high');
+                        }
+                        tag.textContent = `${key}: ${(val * 100).toFixed(0)}%`;
+                        attrTags.appendChild(tag);
+                    }
+                } else {
+                    // 如果没有 attributes，隐藏标签区或显示提示
+                    attrTags.innerHTML = '<span style="color:#8a7a99;font-size:0.85rem;">暂无详细属性数据</span>';
+                }
+
+                result.classList.add('show');
+
+            } catch (err) {
+                showError(err.message || '网络错误，请确保 API 服务已启动');
+                console.error('[Frontend Error]', err);
+            } finally {
+                loading.classList.remove('show');
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        // ==================== 初始化提示 ====================
+        console.log('💄 妆容推荐前端已加载，等待 API 服务启动...');
+        // 可加一个简单检测：API 是否存活
+        // 但不强制，避免干扰用户体验
+    </script>
+
+</body>
+</html>

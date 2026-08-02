@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 import pandas as pd
 import torch
@@ -6,9 +7,12 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms, models
 from PIL import Image
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import accuracy_score, recall_score, f1_score
 from dotenv import load_dotenv
-from config import TARGET_ATTRS
+
+# ===== 添加项目根目录到 sys.path，确保能导入 src 下的模块 =====
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.config import TARGET_ATTRS
 
 load_dotenv()
 
@@ -18,7 +22,7 @@ PROCESSED_DIR = os.getenv("PROCESSED_DATA_DIR")
 DEVICE = os.getenv("DEVICE", "cpu")
 BATCH_SIZE = 64
 
-# ==================== 1. 定义模型结构（必须和训练时一模一样） ====================
+# ==================== 1. 定义模型结构 ====================
 class EndToEndModel(nn.Module):
     def __init__(self):
         super().__init__()
@@ -50,16 +54,18 @@ model.eval()
 print("✅ 模型加载成功！")
 
 # ==================== 3. 加载测试集图片和标签 ====================
-# 加载测试集 CSV
 test_csv = os.path.join(PROCESSED_DIR, "test_images.csv")
 test_df = pd.read_csv(test_csv)
 
-# 【快速验证】只取前 2000 张，正式评估全量时注释掉下一行
-test_df = test_df.head(2000)
+# 【可选】快速测试：只取前 N 张，正式评估时请注释掉下一行
+# test_df = test_df.head(2000)   # ← 取消注释以快速测试
+
 print(f"测试集样本数: {len(test_df)}")
 
-# 加载属性文件（获取真实标签）
+# 加载属性文件
 attr_file = os.getenv("ATTR_FILE")
+if not attr_file:
+    raise ValueError("请在 .env 中设置 ATTR_FILE")
 attr_df = pd.read_csv(attr_file, sep=r'\s+', skiprows=2, header=None)
 with open(attr_file, 'r') as f:
     lines = f.readlines()
@@ -78,7 +84,7 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-# ==================== 5. 自定义测试数据集（不包含增强） ====================
+# ==================== 5. 自定义测试数据集 ====================
 class TestDataset(Dataset):
     def __init__(self, img_dir, df, attr_df, transform=None):
         self.img_dir = img_dir
@@ -96,8 +102,6 @@ class TestDataset(Dataset):
         image = Image.open(img_path).convert('RGB')
         if self.transform:
             image = self.transform(image)
-        
-        # 获取真实标签
         labels = self.attr_df[self.attr_df['filename'] == img_name][TARGET_ATTRS].values[0]
         labels = (labels == 1).astype(np.float32)
         return image, torch.tensor(labels, dtype=torch.float32)

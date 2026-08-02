@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 # 现在可以正常导入 src 下的模块
 from src.config import TARGET_ATTRS
-from src.recommendation_engine import recommend_makeup
+from src.recommendation_engine import recommend_makeup,recommend_makeup_topn
 
 load_dotenv()
 
@@ -68,12 +68,17 @@ def predict_image(image_path):
         preds = (probs > 0.4).astype(int)
     
     # 调用推荐引擎
+    
+    # 选择使用新函数（返回列表）
+    #results = recommend_makeup_topn(preds, top_n=2)
+    # 或者使用旧函数（返回字符串）
     makeup, reason = recommend_makeup(preds)
     
-    # 打印检测到的属性（概率 > 0.5）
+    
+    # 打印检测到的属性（概率 > 0.3）
     print("\n🔍 模型检测到的属性:")
     for attr, prob in zip(TARGET_ATTRS, probs):
-        if prob > 0.4:
+        if prob > 0.3:
             print(f"  {attr}: {prob:.2%}")
     
     return makeup, reason
