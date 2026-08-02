@@ -1,0 +1,2 @@
+- `legacy_model_evaluation.ipynb`：旧版评估（基于冻结特征），已弃用，仅供参考。
+- 新版评估请使用 `src/evaluate_end2end.py`。

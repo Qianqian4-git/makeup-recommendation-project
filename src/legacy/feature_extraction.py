@@ -1,3 +1,12 @@
+# ============================================================
+# DEPRECATED (弃用)
+# 功能: 使用 ResNet/FaceNet 提取 512 维冻结特征
+# 替代方案: 改用 model_training_end2end.py（端到端微调）
+# 弃用原因: 预训练特征对 CelebA 属性（脸型/厚唇等）区分度不足，
+#           冻结特征方案宏平均 F1 仅为 0.12，远低于端到端方案（0.52+）
+# 归档日期: 2026-08-02
+# ============================================================
+
 import os
 import cv2
 import numpy as np
@@ -9,8 +18,6 @@ from PIL import Image
 import pandas as pd
 from tqdm import tqdm
 from dotenv import load_dotenv
-
-
 
 load_dotenv()
 
